@@ -1,12 +1,12 @@
 [submodule "ZLToolKit"]
 	path = 3rdpart/ZLToolKit
-	url = https://gitee.com/xia-chu/ZLToolKit
+	url = https://github.com/ZLMediaKit/ZLToolKit.git
 [submodule "3rdpart/media-server"]
 	path = 3rdpart/media-server
-	url = https://gitee.com/ireader/media-server
+	url = https://github.com/ireader/media-server.git
 [submodule "3rdpart/jsoncpp"]
 	path = 3rdpart/jsoncpp
-	url = https://gitee.com/mirrors/jsoncpp.git
+	url = https://github.com/open-source-parsers/jsoncpp.git
 [submodule "www/webassist"]
 	path = www/webassist
-	url = https://gitee.com/victor1002/zlm_webassist
+	url = https://github.com/1002victor/zlm_webassist.git
