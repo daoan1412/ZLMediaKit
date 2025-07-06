@@ -139,7 +139,7 @@ void System::startDaemon(bool &kill_parent_if_failed) {
     do {
         pid = fork();
         if (pid == -1) {
-            WarnL << "fork失败:" << get_uv_errmsg();
+            WarnL << "fork failed:" << get_uv_errmsg();
             // 休眠1秒再试  [AUTO-TRANSLATED:00e5d7bf]
             // Sleep for 1 second and try again
             sleep(1);
@@ -154,15 +154,15 @@ void System::startDaemon(bool &kill_parent_if_failed) {
 
         // 父进程,监视子进程是否退出  [AUTO-TRANSLATED:0e13a34d]
         // Parent process, monitor whether the child process exits
-        DebugL << "启动子进程:" << pid;
+        DebugL << "Starting child process:" << pid;
         signal(SIGINT, [](int) {
-            WarnL << "收到主动退出信号,关闭父进程与子进程";
+            WarnL << "Received active exit signal, closing parent and child processes";
             kill(pid, SIGINT);
             exit(0);
         });
 
         signal(SIGTERM,[](int) {
-            WarnL << "收到主动退出信号,关闭父进程与子进程";
+            WarnL << "Received active exit signal, closing parent and child processes";
             kill(pid, SIGINT);
             exit(0);
         });
@@ -170,7 +170,7 @@ void System::startDaemon(bool &kill_parent_if_failed) {
         do {
             int status = 0;
             if (waitpid(pid, &status, 0) >= 0) {
-                WarnL << "子进程退出";
+                WarnL << "Child process exited";
                 // 休眠3秒再启动子进程  [AUTO-TRANSLATED:608448bd]
                 // Sleep for 3 seconds and then start the child process
                 sleep(3);
@@ -179,7 +179,7 @@ void System::startDaemon(bool &kill_parent_if_failed) {
                 kill_parent_if_failed = false;
                 break;
             }
-            DebugL << "waitpid被中断:" << get_uv_errmsg();
+            DebugL << "waitpid interrupted:" << get_uv_errmsg();
         } while (true);
     } while (true);
 #endif // _WIN32
@@ -200,7 +200,7 @@ void System::systemSetup(){
             rlim_new.rlim_cur = rlim_new.rlim_max = rlim.rlim_max;
             setrlimit(RLIMIT_CORE, &rlim_new);
         }
-        InfoL << "core文件大小设置为:" << rlim_new.rlim_cur;
+        InfoL << "Core file size set to:" << rlim_new.rlim_cur;
     }
 
     if (getrlimit(RLIMIT_NOFILE, &rlim)==0) {
@@ -209,7 +209,7 @@ void System::systemSetup(){
             rlim_new.rlim_cur = rlim_new.rlim_max = rlim.rlim_max;
             setrlimit(RLIMIT_NOFILE, &rlim_new);
         }
-        InfoL << "文件最大描述符个数设置为:" << rlim_new.rlim_cur;
+        InfoL << "Maximum file descriptor count set to:" << rlim_new.rlim_cur;
     }
 
 #ifndef ANDROID
