@@ -119,7 +119,7 @@ public:
                              Option::ArgNone,/*该选项后面必须跟值*/
                              nullptr,/*该选项默认值*/
                              false,/*该选项是否必须赋值，如果没有默认值且为ArgRequired时用户必须提供该参数否则将抛异常*/
-                             "是否以Daemon方式启动",/*该选项说明文字*/
+                             "Start as daemon process",/*该选项说明文字*/
                              nullptr);
 #endif//!defined(_WIN32)
 
@@ -128,7 +128,7 @@ public:
                              Option::ArgRequired,/*该选项后面必须跟值*/
                              to_string(LDebug).data(),/*该选项默认值*/
                              false,/*该选项是否必须赋值，如果没有默认值且为ArgRequired时用户必须提供该参数否则将抛异常*/
-                             "日志等级,LTrace~LError(0~4)",/*该选项说明文字*/
+                             "Log level, LTrace~LError(0~4)",/*该选项说明文字*/
                              nullptr);
 
         (*_parser) << Option('m',/*该选项简称，如果是\x00则说明无简称*/
@@ -136,7 +136,7 @@ public:
                              Option::ArgRequired,/*该选项后面必须跟值*/
                              "7",/*该选项默认值*/
                              false,/*该选项是否必须赋值，如果没有默认值且为ArgRequired时用户必须提供该参数否则将抛异常*/
-                             "日志最多保存天数",/*该选项说明文字*/
+                             "Maximum days to keep logs",/*该选项说明文字*/
                              nullptr);
 
         (*_parser) << Option('c',/*该选项简称，如果是\x00则说明无简称*/
@@ -144,7 +144,7 @@ public:
                              Option::ArgRequired,/*该选项后面必须跟值*/
                              (exeDir() + "config.ini").data(),/*该选项默认值*/
                              false,/*该选项是否必须赋值，如果没有默认值且为ArgRequired时用户必须提供该参数否则将抛异常*/
-                             "配置文件路径",/*该选项说明文字*/
+                             "Configuration file path",/*该选项说明文字*/
                              nullptr);
 
         (*_parser) << Option('s',/*该选项简称，如果是\x00则说明无简称*/
@@ -152,7 +152,7 @@ public:
                              Option::ArgRequired,/*该选项后面必须跟值*/
                              (exeDir() + "default.pem").data(),/*该选项默认值*/
                              false,/*该选项是否必须赋值，如果没有默认值且为ArgRequired时用户必须提供该参数否则将抛异常*/
-                             "ssl证书文件或文件夹,支持p12/pem类型",/*该选项说明文字*/
+                             "SSL certificate file or folder, supports p12/pem types",/*该选项说明文字*/
                              nullptr);
 
         (*_parser) << Option('t',/*该选项简称，如果是\x00则说明无简称*/
@@ -160,7 +160,7 @@ public:
                              Option::ArgRequired,/*该选项后面必须跟值*/
                              to_string(thread::hardware_concurrency()).data(),/*该选项默认值*/
                              false,/*该选项是否必须赋值，如果没有默认值且为ArgRequired时用户必须提供该参数否则将抛异常*/
-                             "启动事件触发线程数",/*该选项说明文字*/
+                             "Number of event trigger threads to start",/*该选项说明文字*/
                              nullptr);
 
         (*_parser) << Option(0,/*该选项简称，如果是\x00则说明无简称*/
@@ -168,18 +168,18 @@ public:
                              Option::ArgRequired,/*该选项后面必须跟值*/
                              to_string(1).data(),/*该选项默认值*/
                              false,/*该选项是否必须赋值，如果没有默认值且为ArgRequired时用户必须提供该参数否则将抛异常*/
-                             "是否启动cpu亲和性设置",/*该选项说明文字*/
+                             "Enable CPU affinity setting",/*该选项说明文字*/
                              nullptr);
 
 #if defined(ENABLE_VERSION)
-        (*_parser) << Option('v', "version", Option::ArgNone, nullptr, false, "显示版本号",
+        (*_parser) << Option('v', "version", Option::ArgNone, nullptr, false, "Show version information",
                              [](const std::shared_ptr<ostream> &stream, const string &arg) -> bool {
                                  // 版本信息  [AUTO-TRANSLATED:d4cc59b2]
                                  // Version information
-                                 *stream << "编译日期: " << BUILD_TIME << std::endl;
-                                 *stream << "代码日期: " << COMMIT_TIME << std::endl;
-                                 *stream << "当前git分支: " << BRANCH_NAME << std::endl;
-                                 *stream << "当前git hash值: " << COMMIT_HASH << std::endl;
+                                 *stream << "Build Date: " << BUILD_TIME << std::endl;
+                                 *stream << "Code Date: " << COMMIT_TIME << std::endl;
+                                 *stream << "Current Git Branch: " << BRANCH_NAME << std::endl;
+                                 *stream << "Current Git Hash: " << COMMIT_HASH << std::endl;
                                  throw ExitException();
                              });
 #endif
@@ -188,7 +188,7 @@ public:
                              Option::ArgRequired,/*该选项后面必须跟值*/
                              "100",/*该选项默认值*/
                              true,/*该选项是否必须赋值，如果没有默认值且为ArgRequired时用户必须提供该参数否则将抛异常*/
-                             "最大保存日志切片个数",/*该选项说明文字*/
+                             "Maximum number of log slices to keep",/*该选项说明文字*/
                              nullptr);
 
         (*_parser) << Option(0,/*该选项简称，如果是\x00则说明无简称*/
@@ -196,7 +196,7 @@ public:
                              Option::ArgRequired,/*该选项后面必须跟值*/
                              "256",/*该选项默认值*/
                              true,/*该选项是否必须赋值，如果没有默认值且为ArgRequired时用户必须提供该参数否则将抛异常*/
-                             "单个日志切片最大容量,单位MB",/*该选项说明文字*/
+                             "Maximum capacity of single log slice in MB",/*该选项说明文字*/
                              nullptr);
 
         (*_parser) << Option(0,/*该选项简称，如果是\x00则说明无简称*/
@@ -204,7 +204,7 @@ public:
                              Option::ArgRequired,/*该选项后面必须跟值*/
                              (exeDir() + "log/").data(),/*该选项默认值*/
                              true,/*该选项是否必须赋值，如果没有默认值且为ArgRequired时用户必须提供该参数否则将抛异常*/
-                             "日志保存文件夹路径",/*该选项说明文字*/
+                             "Log storage folder path",/*该选项说明文字*/
                              nullptr);
     }
 };
@@ -392,9 +392,9 @@ int start_main(int argc,char *argv[]) {
 #endif //defined(ENABLE_SRT)
 
         installWebApi();
-        InfoL << "已启动http api 接口";
+        InfoL << "HTTP API interface started";
         installWebHook();
-        InfoL << "已启动http hook 接口";
+        InfoL << "HTTP Hook interface started";
 
         try {
             // rtsp服务器，端口默认554  [AUTO-TRANSLATED:07937d81]
@@ -485,9 +485,9 @@ int start_main(int argc,char *argv[]) {
 
     // 休眠1秒再退出，防止资源释放顺序错误  [AUTO-TRANSLATED:1b11a74f]
     // sleep for 1 second before exiting, to prevent resource release order errors
-    InfoL << "程序退出中,请等待...";
+    InfoL << "Program is exiting, please wait...";
     sleep(1);
-    InfoL << "程序退出完毕!";
+    InfoL << "Program exit completed!";
     return 0;
 }
 
