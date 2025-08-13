@@ -748,6 +748,26 @@ void addStreamPusherProxy(const string &schema,
     pusher->publish(url);
 }
 
+void getThreadsLoad(TaskExecutorGetterImp &getter, API_ARGS_MAP_ASYNC) {
+    getter.getExecutorDelay([&getter, invoker, headerOut](const vector<int> &vecDelay) {
+        Value val;
+        auto vec = getter.getExecutorLoad();
+        std::vector<EventPoller::Ptr> pollers;
+        getter.for_each([&](const TaskExecutor::Ptr &exe) { pollers.emplace_back(std::static_pointer_cast<EventPoller>(exe)); });
+        int i = API::Success;
+        for (auto load : vec) {
+            Value obj(objectValue);
+            obj["load"] = load;
+            auto &poller = pollers[i];
+            obj["name"] = poller->getThreadName();
+            obj["fd_count"] = static_cast<Json::UInt64>(poller->fdCount());
+            obj["delay"] = vecDelay[i++];
+            val["data"].append(obj);
+        }
+        val["code"] = API::Success;
+        invoker(200, headerOut, val.toStyledString());
+    });
+}
 
 /**
  * 安装api接口
@@ -769,19 +789,7 @@ void installWebApi() {
     // Test url http://127.0.0.1/index/api/getThreadsLoad
     api_regist("/index/api/getThreadsLoad", [](API_ARGS_MAP_ASYNC) {
         CHECK_SECRET();
-        EventPollerPool::Instance().getExecutorDelay([invoker, headerOut](const vector<int> &vecDelay) {
-            Value val;
-            auto vec = EventPollerPool::Instance().getExecutorLoad();
-            int i = API::Success;
-            for (auto load : vec) {
-                Value obj(objectValue);
-                obj["load"] = load;
-                obj["delay"] = vecDelay[i++];
-                val["data"].append(obj);
-            }
-            val["code"] = API::Success;
-            invoker(200, headerOut, val.toStyledString());
-        });
+        getThreadsLoad(EventPollerPool::Instance(), API_ARGS_VALUE, invoker);
     });
 
     // 获取后台工作线程负载  [AUTO-TRANSLATED:6166e265]
@@ -790,19 +798,7 @@ void installWebApi() {
     // Test url http://127.0.0.1/index/api/getWorkThreadsLoad
     api_regist("/index/api/getWorkThreadsLoad", [](API_ARGS_MAP_ASYNC) {
         CHECK_SECRET();
-        WorkThreadPool::Instance().getExecutorDelay([invoker, headerOut](const vector<int> &vecDelay) {
-            Value val;
-            auto vec = WorkThreadPool::Instance().getExecutorLoad();
-            int i = 0;
-            for (auto load : vec) {
-                Value obj(objectValue);
-                obj["load"] = load;
-                obj["delay"] = vecDelay[i++];
-                val["data"].append(obj);
-            }
-            val["code"] = API::Success;
-            invoker(200, headerOut, val.toStyledString());
-        });
+        getThreadsLoad(WorkThreadPool::Instance(), API_ARGS_VALUE, invoker);
     });
 
     // 获取服务器配置  [AUTO-TRANSLATED:7dd2f3da]
@@ -1603,6 +1599,7 @@ void installWebApi() {
         // Record the app and vhost of the sending stream
         args.recv_stream_app = allArgs["app"];
         args.recv_stream_vhost = allArgs["vhost"];
+        args.enable_origin_recv_limit = allArgs["enable_origin_recv_limit"];
         src->getOwnerPoller()->async([=]() mutable {
             try {
                 src->startSendRtp(args, [val, headerOut, invoker](uint16_t local_port, const SockException &ex) mutable {
@@ -1649,6 +1646,7 @@ void installWebApi() {
         args.recv_stream_id = allArgs["recv_stream_id"];
         args.recv_stream_app = allArgs["app"];
         args.recv_stream_vhost = allArgs["vhost"];
+        args.enable_origin_recv_limit = allArgs["enable_origin_recv_limit"];
 
         src->getOwnerPoller()->async([=]() mutable {
             try {
@@ -1776,6 +1774,30 @@ void installWebApi() {
         });
     });
 
+    api_regist("/index/api/startRecordTask",[](API_ARGS_MAP_ASYNC){
+        CHECK_SECRET();
+        CHECK_ARGS("vhost", "app", "stream", "path", "back_ms", "forward_ms");
+
+        auto src = MediaSource::find(allArgs["vhost"], allArgs["app"], allArgs["stream"]);
+        if (!src) {
+            throw ApiRetException("can not find the stream", API::NotFound);
+        }
+
+        src->getOwnerPoller()->async([=]() mutable {
+            std::string err;
+            std::string path;
+            try {
+                path = src->getMuxer()->startRecord(allArgs["path"], allArgs["back_ms"], allArgs["forward_ms"]);
+            } catch (std::exception &ex) {
+                err = ex.what();
+            }
+            val["code"] = err.empty() ? API::Success : API::OtherFailed;
+            val["data"]["path"] = path;
+            val["msg"] = err;
+            invoker(200, headerOut, val.toStyledString());
+        });
+    });
+
     // 设置录像流播放速度  [AUTO-TRANSLATED:a8d82298]
     // Set the playback speed of the recording stream
     api_regist("/index/api/setRecordSpeed", [](API_ARGS_MAP_ASYNC) {
@@ -1888,11 +1910,13 @@ void installWebApi() {
     // http://127.0.0.1/index/api/deleteRecordDirectroy?vhost=__defaultVhost__&app=live&stream=ss&period=2020-01-01
     api_regist("/index/api/deleteRecordDirectory", [](API_ARGS_MAP) {
         CHECK_SECRET();
-        CHECK_ARGS("vhost", "app", "stream", "period");
+        CHECK_ARGS("vhost", "app", "stream");
         auto tuple = MediaTuple{allArgs["vhost"], allArgs["app"], allArgs["stream"], ""};
         auto record_path = Recorder::getRecordPath(Recorder::type_mp4, tuple, allArgs["customized_path"]);
         auto period = allArgs["period"];
-        record_path = record_path + period + "/";
+        if (!period.empty()) {
+            record_path = record_path + period + "/";
+        }
 
         bool recording = false;
         auto name = allArgs["name"];
@@ -1925,6 +1949,15 @@ void installWebApi() {
             return true;
         }, true, true);
         File::deleteEmptyDir(record_path);
+    });
+
+    api_regist("/index/api/deleteSnapDirectory", [](API_ARGS_MAP) {
+        CHECK_SECRET();
+        CHECK_ARGS("vhost", "app", "stream");
+        GET_CONFIG(std::string, root, API::kSnapRoot);
+        auto path = File::absolutePath(allArgs["vhost"] + "/" + allArgs["app"] + "/" + allArgs["stream"] + "/" + allArgs["file"], root);
+        InfoL << "delete " << path;
+        File::delete_file(path, true);
     });
 
     // 获取录像文件夹列表或mp4文件列表  [AUTO-TRANSLATED:f7e299bc]
